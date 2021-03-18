@@ -1,10 +1,10 @@
-const express = require("express");
+const express = require('express');
 const app = express();
-const { resolve } = require("path");
+const { resolve } = require('path');
 
 // Copy the .env.example in the root into a .env file in this folder
-require("dotenv").config({ path: "./.env" });
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+require('dotenv').config({ path: './.env' });
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.use(express.static(process.env.STATIC_DIR));
 app.use(
@@ -12,15 +12,15 @@ app.use(
     // We need the raw body to verify webhook signatures.
     // Let's compute it only when hitting the Stripe webhook endpoint.
     verify: function (req, res, buf) {
-      if (req.originalUrl.startsWith("/webhook")) {
+      if (req.originalUrl.startsWith('/webhook')) {
         req.rawBody = buf.toString();
       }
-    }
+    },
   })
 );
 
-app.get("/", (req, res) => {
-  const path = resolve(process.env.STATIC_DIR + "/index.html");
+app.get('/', (req, res) => {
+  const path = resolve(process.env.STATIC_DIR + '/index.html');
   res.sendFile(path);
 });
 
@@ -35,22 +35,23 @@ app.get("/config", async (req, res) => {
 });
 
 // Fetch the Checkout Session to display the JSON result on the success page
-app.get("/checkout-session", async (req, res) => {
+app.get('/checkout-session', async (req, res) => {
   const { sessionId } = req.query;
   const session = await stripe.checkout.sessions.retrieve(sessionId);
   res.send(session);
 });
 
-app.post("/create-checkout-session", async (req, res) => {
+app.post('/create-checkout-session', async (req, res) => {
   const domainURL = process.env.DOMAIN;
-
+   
   const { quantity, locale } = req.body;
   // Create new Checkout Session for the order
   // Other optional params include:
   // [billing_address_collection] - to display billing address details on the page
   // [customer] - if you have an existing Stripe Customer ID
   // [customer_email] - lets you prefill the email input in the Checkout page
-  // For full details see https://stripe.com/docs/api/checkout/sessions/create
+  const customer = await stripe.customers.create();
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["bacs_debit"],
     payment_intent_data: {
@@ -75,14 +76,14 @@ app.post("/create-checkout-session", async (req, res) => {
 });
 
 // Webhook handler for asynchronous events.
-app.post("/webhook", async (req, res) => {
+app.post('/webhook', async (req, res) => {
   let data;
   let eventType;
   // Check if webhook signing is configured.
   if (process.env.STRIPE_WEBHOOK_SECRET) {
     // Retrieve the event by verifying the signature using the raw body and secret.
     let event;
-    let signature = req.headers["stripe-signature"];
+    let signature = req.headers['stripe-signature'];
 
     try {
       event = stripe.webhooks.constructEvent(
