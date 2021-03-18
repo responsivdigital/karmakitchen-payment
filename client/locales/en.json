@@ -1,9 +1,6 @@
 {
-  "title": "Stripe Checkout Sample",
-  "headline": "Single photo",
-  "subline": "Purchase a Pasha original photo",
-  "sr-legal-text": "Number of copies (max 10)",
+  "title": "Karma Kitchen - Deposit Payment",
   "button": {
-    "submit": "Buy for {{total}}"
+    "submit": "Continue to payment"
   }
 }
